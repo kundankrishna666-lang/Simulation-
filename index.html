@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#090d16">
+    <title>Brahmanda OS - Destiny & World Simulation</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { background-color: #090d16; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+        canvas { image-rendering: pixelated; border-radius: 0.75rem; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-3 select-none">
+
+    <!-- Top Navigation & Cosmic Clock -->
+    <header class="w-full max-w-lg flex justify-between items-center py-2 px-3 bg-slate-900/90 border border-slate-800 rounded-xl mb-3">
+        <div>
+            <h1 class="text-base font-bold text-cyan-400 tracking-wide">🌌 ब्रह्मांड सिमुलेशन (v2.0)</h1>
+            <p id="world-era" class="text-[11px] text-slate-400">युग: आधुनिक भारत | वर्ष: 2026 | दिन: 1</p>
+        </div>
+        <div class="text-right">
+            <span id="karma-badge" class="px-2 py-1 text-[11px] font-semibold rounded bg-indigo-950 text-indigo-300 border border-indigo-800">संतुलित भाग्य</span>
+        </div>
+    </header>
+
+    <!-- 1. GRAPHICS & UI MODULE (Live World Canvas) -->
+    <section class="w-full max-w-lg relative mb-3">
+        <canvas id="worldCanvas" width="480" height="200" class="w-full h-44 bg-slate-950 border border-slate-800 shadow-inner"></canvas>
+        <div class="absolute bottom-2 left-2 right-2 flex justify-between text-[10px] bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-slate-300">
+            <span id="env-weather">🌤️ मौसम: स्वच्छ</span>
+            <span id="env-economy">📈 वैश्विक अर्थव्यवस्था: स्थिर (5.2%)</span>
+            <span id="env-entropy">⚖️ ब्रह्मांडीय संतुलन: 100%</span>
+        </div>
+    </section>
+
+    <!-- Player Vital Metrics -->
+    <section class="w-full max-w-lg grid grid-cols-4 gap-2 mb-3 text-center">
+        <div class="bg-slate-900 border border-slate-800 p-2 rounded-lg">
+            <div class="text-[10px] text-slate-400">ज्ञान (IQ)</div>
+            <div id="val-knowledge" class="text-sm font-bold text-cyan-400">15</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-2 rounded-lg">
+            <div class="text-[10px] text-slate-400">ऊर्जा (HP)</div>
+            <div id="val-energy" class="text-sm font-bold text-emerald-400">85%</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-2 rounded-lg">
+            <div class="text-[10px] text-slate-400">संसाधन (₹)</div>
+            <div id="val-wealth" class="text-sm font-bold text-amber-400">10K</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-2 rounded-lg">
+            <div class="text-[10px] text-slate-400">कर्म स्कोर</div>
+            <div id="val-karma" class="text-sm font-bold text-purple-400">0</div>
+        </div>
+    </section>
+
+    <!-- 2. AI & KARMA LOGIC MODULE (Dynamic Future Engine) -->
+    <section class="w-full max-w-lg bg-slate-900/90 border border-slate-800 p-3 rounded-xl mb-3">
+        <div class="flex justify-between items-center mb-1">
+            <h2 class="text-xs font-bold text-amber-300 uppercase tracking-wider">🔮 लाइव फ्यूचर प्रोजेक्शन (AI Destiny Matrix)</h2>
+            <span id="future-prob" class="text-[10px] text-slate-400">सटीकता: 98.4%</span>
+        </div>
+        <p id="future-text" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-2.5 rounded-lg border border-slate-800/80">
+            सिमुलेशन सक्रिय है। आपके वर्तमान कर्म और निर्णय आने वाले 10 वर्षों की समयरेखा (Timeline) को आकार दे रहे हैं...
+        </p>
+    </section>
+
+    <!-- Present Action Controls -->
+    <section class="w-full max-w-lg bg-slate-900/90 border border-slate-800 p-3 rounded-xl mb-3">
+        <h2 class="text-xs font-bold text-cyan-300 uppercase tracking-wider mb-2">⚡ वर्तमान निर्णय (Free Will Actions)</h2>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+            <button onclick="Engine.act('research')" class="bg-cyan-950 hover:bg-cyan-900 border border-cyan-700 text-cyan-200 p-2.5 rounded-lg text-left transition">
+                <div class="font-bold">🔬 विज्ञान और शोध</div>
+                <div class="text-[10px] text-cyan-400/80">+ज्ञान, +कर्म, -ऊर्जा</div>
+            </button>
+            <button onclick="Engine.act('build')" class="bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-200 p-2.5 rounded-lg text-left transition">
+                <div class="font-bold">🏗️ निर्माण और कर्म</div>
+                <div class="text-[10px] text-emerald-400/80">+संसाधन, -ऊर्जा</div>
+            </button>
+            <button onclick="Engine.act('meditate')" class="bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 text-indigo-200 p-2.5 rounded-lg text-left transition">
+                <div class="font-bold">🧘 ध्यान और आत्मचिंतन</div>
+                <div class="text-[10px] text-indigo-400/80">+ऊर्जा, +संतुलन</div>
+            </button>
+            <button onclick="Engine.act('exploit')" class="bg-rose-950 hover:bg-rose-900 border border-rose-700 text-rose-200 p-2.5 rounded-lg text-left transition">
+                <div class="font-bold">⚠️ शॉर्टकट और स्वार्थ</div>
+                <div class="text-[10px] text-rose-400/80">+तेज धन, --कर्म</div>
+            </button>
+        </div>
+    </section>
+
+    <!-- Past Memory & Timeline Log -->
+    <section class="w-full max-w-lg bg-slate-900/90 border border-slate-800 p-3 rounded-xl flex-1 flex flex-col">
+        <div class="flex justify-between items-center mb-1">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">📜 अतीत के कर्मों का लेखा-जोखा (Akashic Records)</h2>
+            <button onclick="Engine.reset()" class="text-[10px] text-rose-400 hover:underline">रीसेट करें</button>
+        </div>
+        <ul id="akashic-log" class="text-[11px] text-slate-400 space-y-1.5 overflow-y-auto max-h-32 pr-1"></ul>
+    </section>
+
+    <script>
+        // MODULE 1: WORLD ENGINE (Environment, Economy, Time, Cosmic Laws)
+        const WorldEngine = {
+            year: 2026,
+            day: 1,
+            economyGrowth: 5.2,
+            entropy: 100,
+            weatherStates: ["स्वच्छ आकाश", "मानसून की वर्षा", "सौर तूफान", "शीत लहर", "शांत वातावरण"],
+            currentWeather: "स्वच्छ आकाश",
+
+            tick() {
+                this.day++;
+                if (this.day % 365 === 0) this.year++;
+                if (this.day % 5 === 0) {
+                    this.currentWeather = this.weatherStates[Math.floor(Math.random() * this.weatherStates.length)];
+                    this.economyGrowth = +(4.0 + Math.random() * 4.5).toFixed(1);
+                }
+                this.entropy = Math.max(10, Math.min(100, this.entropy + (Math.random() * 4 - 2)));
+            }
+        };
+
+        // MODULE 2: AI & KARMA LOGIC (Cause-Effect Matrix & Future Predictor)
+        const KarmaAI = {
+            evaluateFuture(player, world) {
+                const { knowledge, wealth, karma, energy } = player;
+                
+                if (energy <= 10) {
+                    return "🚨 चेतावनी (Critical Timeline): आपके शरीर और मन की ऊर्जा समाप्त होने के कगार पर है। यदि आपने अभी विश्राम नहीं किया, तो भविष्य की सभी संभावनाएं रुक जाएंगी।";
+                }
+                if (karma <= -30) {
+                    return "🌑 अंधकारमय भविष्य: आपने स्वार्थ और शॉर्टकट से संसाधन तो जुटा लिए, लेकिन ब्रह्मांडीय संतुलन बिगड़ चुका है। आने वाले वर्षों में भारी सामाजिक और मानसिक पतन निश्चित है।";
+                }
+                if (knowledge >= 80 && karma >= 25) {
+                    return "🌟 स्वर्णिम भविष्य (Visionary Timeline): आपका ज्ञान और उच्च कर्म एक नई क्रांति को जन्म दे रहे हैं। भारत और विश्व आपके वैज्ञानिक योगदान से एक नए युग में प्रवेश कर रहा है।";
+                }
+                if (wealth >= 50000 && karma > 0) {
+                    return "🏛️ समृद्ध भविष्य: आपके पास अपार संसाधन और सकारात्मक कर्म हैं। आप समाज के निर्माण और नई तकनीकों को फंड करने की स्थिति में हैं।";
+                }
+                return `⏳ परिवर्तनशील भविष्य (वर्ष ${world.year + 5}): आपकी वर्तमान दिशा सामान्य है। ज्ञान (${knowledge}) और कर्म (${karma}) का अनुपात तय करेगा कि आप भीड़ का हिस्सा बनेंगे या इतिहास रचेंगे।`;
+            },
+
+            getKarmaStatus(karma) {
+                if (karma >= 40) return { text: "दिव्य कर्मयोगी", color: "text-cyan-300 border-cyan-700 bg-cyan-950" };
+                if (karma >= 10) return { text: "सकारात्मक पथ", color: "text-emerald-300 border-emerald-700 bg-emerald-950" };
+                if (karma <= -20) return { text: "प्रतिकूल भाग्य", color: "text-rose-300 border-rose-700 bg-rose-950" };
+                return { text: "संतुलित भाग्य", color: "text-indigo-300 border-indigo-800 bg-indigo-950" };
+            }
+        };
+
+        // MODULE 3: GRAPHICS & UI RENDERER (2D Procedural World Canvas)
+        const GraphicsRenderer = {
+            canvas: document.getElementById('worldCanvas'),
+            ctx: null,
+            particles: [],
+
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                for (let i = 0; i < 45; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        r: Math.random() * 2 + 0.5,
+                        vx: (Math.random() - 0.5) * 0.6,
+                        vy: (Math.random() - 0.5) * 0.6
+                    });
+                }
+                this.loop();
+            },
+
+            loop() {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                ctx.fillStyle = Engine.player.karma < -15 ? '#1a0b12' : '#060b19';
+                ctx.fillRect(0, 0, w, h);
+
+                ctx.fillStyle = Engine.player.karma >= 20 ? '#38bdf8' : '#94a3b8';
+                this.particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0 || p.x > w) p.vx *= -1;
+                    if (p.y < 0 || p.y > h) p.vy *= -1;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                const horizonY = h * 0.68;
+                const grad = ctx.createLinearGradient(0, horizonY, 0, h);
+                grad.addColorStop(0, Engine.player.karma < -15 ? '#4c1d95' : '#0284c7');
+                grad.addColorStop(1, '#090d16');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(w / 2, h + 40, w * 0.75, 110, 0, Math.PI, 0);
+                ctx.fill();
+
+                const buildings = Math.min(25, Math.floor(Engine.player.knowledge / 4) + 3);
+                ctx.fillStyle = '#38bdf8';
+                for (let i = 0; i < buildings; i++) {
+                    let bx = (w * 0.2) + (i * ((w * 0.6) / buildings));
+                    let bh = 8 + ((i * 7 + Engine.player.wealth / 1000) % 25);
+                    ctx.fillRect(bx, horizonY - bh + 5, 4, bh);
+                }
+
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(w / 2, horizonY - 12, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                requestAnimationFrame(() => this.loop());
+            }
+        };
+
+        // CORE CONTROLLER (State Management & Persistence)
+        const Engine = {
+            player: { knowledge: 15, energy: 85, wealth: 10000, karma: 0 },
+            logs: [],
+
+            init() {
+                const saved = localStorage.getItem('brahmanda_sim_v2');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    this.player = parsed.player;
+                    this.logs = parsed.logs;
+                    WorldEngine.day = parsed.day;
+                    WorldEngine.year = parsed.year;
+                } else {
+                    this.addLog("ब्रह्मांड सिमुलेशन प्रारंभ हुआ। आप अपने भाग्य के निर्माता हैं।");
+                }
+                GraphicsRenderer.init();
+                this.renderUI();
+            },
+
+            act(choice) {
+                if (this.player.energy <= 5 && choice !== 'meditate') {
+                    this.addLog("⚠️ ऊर्जा अत्यंत कम है! पहले ध्यान और विश्राम करें।");
+                    this.renderUI();
+                    return;
+                }
+
+                WorldEngine.tick();
+                let msg = "";
+
+                switch (choice) {
+                    case 'research':
+                        this.player.knowledge += 6;
+                        this.player.karma += 3;
+                        this.player.energy -= 15;
+                        msg = `दिन ${WorldEngine.day}: गहन शोध और अध्ययन किया (+6 ज्ञान, +3 कर्म)`;
+                        break;
+                    case 'build':
+                        this.player.wealth += 2500;
+                        this.player.karma += 1;
+                        this.player.energy -= 18;
+                        msg = `दिन ${WorldEngine.day}: ईमानदारी से कार्य और निर्माण किया (+₹2500, +1 कर्म)`;
+                        break;
+                    case 'meditate':
+                        this.player.energy = Math.min(100, this.player.energy + 35);
+                        this.player.karma += 2;
+                        msg = `दिन ${WorldEngine.day}: ध्यान और आत्मचिंतन से ऊर्जा पुनर्जीवित हुई (+35% ऊर्जा)`;
+                        break;
+                    case 'exploit':
+                        this.player.wealth += 8000;
+                        this.player.karma -= 10;
+                        this.player.energy -= 10;
+                        msg = `दिन ${WorldEngine.day}: शॉर्टकट अपनाया। धन बढ़ा (+₹8000) पर कर्म का क्षय हुआ (-10 कर्म)`;
+                        break;
+                }
+
+                this.addLog(msg);
+                this.save();
+                this.renderUI();
+            },
+
+            addLog(text) {
+                this.logs.unshift(text);
+                if (this.logs.length > 30) this.logs.pop();
+            },
+
+            renderUI() {
+                document.getElementById('world-era').innerText = `युग: आधुनिक भारत | वर्ष: ${WorldEngine.year} | दिन: ${WorldEngine.day}`;
+                document.getElementById('env-weather').innerText = `🌤️ मौसम: ${WorldEngine.currentWeather}`;
+                document.getElementById('env-economy').innerText = `📈 अर्थव्यवस्था: ${WorldEngine.economyGrowth}%`;
+                document.getElementById('env-entropy').innerText = `⚖️ संतुलन: ${Math.round(WorldEngine.entropy)}%`;
+
+                document.getElementById('val-knowledge').innerText = this.player.knowledge;
+                document.getElementById('val-energy').innerText = `${this.player.energy}%`;
+                document.getElementById('val-wealth').innerText = `${(this.player.wealth / 1000).toFixed(1)}K`;
+                document.getElementById('val-karma').innerText = this.player.karma;
+
+                const status = KarmaAI.getKarmaStatus(this.player.karma);
+                const badge = document.getElementById('karma-badge');
+                badge.innerText = status.text;
+                badge.className = `px-2 py-1 text-[11px] font-semibold rounded border ${status.color}`;
+
+                document.getElementById('future-text').innerText = KarmaAI.evaluateFuture(this.player, WorldEngine);
+                document.getElementById('akashic-log').innerHTML = this.logs.map(l => `<li class="border-b border-slate-800/60 pb-1">• ${l}</li>`).join('');
+            },
+
+            save() {
+                localStorage.setItem('brahmanda_sim_v2', JSON.stringify({
+                    player: this.player,
+                    logs: this.logs,
+                    day: WorldEngine.day,
+                    year: WorldEngine.year
+                }));
+            },
+
+            reset() {
+                localStorage.removeItem('brahmanda_sim_v2');
+                location.reload();
+            }
+        };
+
+        window.onload = () => Engine.init();
+    </script>
+
+    <!-- ===== ADD-ON 1: भविष्य प्रोजेक्शन (10 वर्ष) ===== -->
+    <script>
+// Future projection: today's decisions -> next 10 years (adds a new section; does not touch old code)
+(() => {
+  const KEY = 'brahmanda_recent_v1';
+  let recent = [];
+  try { recent = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+
+  const sec = document.createElement('section');
+  sec.className = 'w-full max-w-lg bg-slate-900/90 border border-slate-800 p-3 rounded-xl mb-3';
+  sec.innerHTML = `
+    <h2 class="text-xs font-bold text-pink-300 uppercase tracking-wider mb-2">🦋 आज के निर्णय का असर: अगले 10 वर्ष</h2>
+    <svg id="fx-chart" viewBox="0 0 300 110" class="w-full bg-slate-950 rounded-lg border border-slate-800"></svg>
+    <div class="flex gap-3 text-[10px] mt-1.5">
+      <span style="color:#22d3ee">● ज्ञान</span><span style="color:#c084fc">● कर्म</span><span style="color:#fbbf24">● संसाधन</span>
+    </div>
+    <p id="fx-note" class="text-[11px] text-slate-300 leading-relaxed mt-2"></p>`;
+  document.getElementById('future-text').closest('section').after(sec);
+
+  const share = k => recent.length ? recent.filter(x => x === k).length / recent.length : 0;
+
+  function project() {
+    const p = Engine.player;
+    let K = p.knowledge, C = p.karma, W = p.wealth;
+    const pts = [{ K, C, W }];
+    for (let y = 1; y <= 10; y++) {
+      K += 14 * share('research') + 2;
+      C += 8 * share('research') + 4 * share('build') + 7 * share('meditate') - 16 * share('exploit');
+      W += 30000 * share('build') + 90000 * share('exploit') + 8000;
+      if (C < -20) W *= 0.8;        // बुरे कर्म का विलंबित फल: साख और संसाधन गिरते हैं
+      else if (C > 20) W *= 1.08;   // अच्छे कर्म से भरोसा और अवसर बढ़ते हैं
+      pts.push({ K, C, W });
+    }
+    return pts;
+  }
+
+  function line(vals, color) {
+    const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1;
+    const d = vals.map((v, i) => `${(10 + i * 28).toFixed(1)},${(100 - ((v - min) / span) * 85).toFixed(1)}`).join(' ');
+    return `<polyline points="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  }
+
+  function render() {
+    const pts = project(), last = pts[10];
+    let grid = '';
+    for (let i = 0; i <= 10; i += 5) grid += `<text x="${10 + i * 28}" y="108" font-size="7" fill="#64748b" text-anchor="middle">+${i}व</text>`;
+    document.getElementById('fx-chart').innerHTML = grid +
+      line(pts.map(p => p.K), '#22d3ee') + line(pts.map(p => p.C), '#c084fc') + line(pts.map(p => p.W), '#fbbf24');
+    let note;
+    if (!recent.length) note = 'अभी कोई निर्णय नहीं लिया गया। ऊपर से कोई कर्म चुनिए और देखिए कि 10 साल की रेखाएँ कैसे मुड़ती हैं।';
+    else if (last.C < -20) note = `⚠️ इसी राह पर 10 साल बाद कर्म ${Math.round(last.C)} होगा। शुरू में धन बढ़ता दिखता है, पर साख गिरने से संसाधन टूटने लगते हैं। दिशा बदलने के लिए शोध, ईमानदार निर्माण और ध्यान बढ़ाइए।`;
+    else if (last.C > 20) note = `🌟 इसी राह पर 10 साल बाद ज्ञान ≈ ${Math.round(last.K)}, कर्म ≈ ${Math.round(last.C)} और संसाधन ≈ ₹${Math.round(last.W / 1000)}K। भरोसा और अवसर साथ-साथ बढ़ रहे हैं।`;
+    else note = `⏳ इसी राह पर 10 साल बाद ज्ञान ≈ ${Math.round(last.K)}, कर्म ≈ ${Math.round(last.C)}। भविष्य अभी खुला है; अगले कुछ निर्णय दिशा तय करेंगे।`;
+    document.getElementById('fx-note').textContent = note + ` (पिछले ${recent.length} निर्णयों के आधार पर)`;
+  }
+
+  // wrap the existing Engine.act instead of editing it
+  const original = Engine.act.bind(Engine);
+  Engine.act = function (choice) {
+    original(choice);
+    recent.push(choice);
+    if (recent.length > 10) recent.shift();
+    try { localStorage.setItem(KEY, JSON.stringify(recent)); } catch (e) {}
+    render();
+  };
+  render();
+  window.addEventListener('load', () => setTimeout(render, 50));
+})();
+
+    </script>
+
+    <!-- ===== ADD-ON 2: बाबा जी (शास्त्रों का सार) ===== -->
+    <script>
+// Baba ji: ask anything -> answer from the essence of Indian scriptures (adds a new section)
+const BabaKnowledge = [
+  { k: ['कर्म', 'karma', 'फल', 'result', 'मेहनत'], src: 'भगवद्गीता 2.47',
+    a: 'गीता कहती है: कर्म करने में तुम्हारा अधिकार है, फल में नहीं। फल की चिंता में डूबे बिना पूरे मन से कर्म करो, और अपनी असफलता को भी कर्म का हिस्सा मानो। कर्म दो तरह से फल देता है: तुरंत और समय के साथ। इसलिए इस सिमुलेशन में शॉर्टकट का फल देर से आता है।' },
+  { k: ['धर्म', 'dharma', 'कर्तव्य', 'duty', 'सही गलत', 'नैतिक'], src: 'महाभारत',
+    a: 'महाभारत में धर्म कोई एक नियम नहीं, परिस्थिति के अनुसार सही कर्तव्य है। यक्ष-प्रश्न में युधिष्ठिर कहते हैं कि धर्म का तत्त्व गुफा में छिपा है और महापुरुषों का मार्ग ही रास्ता है। जब दो कर्तव्य टकराएँ, तो पूछो कि कौन-सा निर्णय सबका कम से कम नुकसान और अधिक से अधिक हित करेगा।' },
+  { k: ['राम', 'ram', 'रामायण', 'ramayan', 'मर्यादा', 'वचन', 'सीता'], src: 'रामायण',
+    a: 'रामायण का सार मर्यादा है: वचन निभाना, पद से पहले कर्तव्य रखना और कठिन समय में भी संयम न खोना। राम राजपद छोड़कर वन जाते हैं, पर सत्य और परिवार का मान रखते हैं। संदेश यह है कि बड़ा बनना अधिकार से नहीं, आचरण से होता है।' },
+  { k: ['डर', 'fear', 'संशय', 'confusion', 'दुविधा', 'अर्जुन', 'arjun', 'चिंता', 'tension'], src: 'भगवद्गीता अध्याय 1-2',
+    a: 'अर्जुन भी युद्धभूमि में दुविधा से भर गया था। कृष्ण ने उसे भागने को नहीं, स्पष्ट देखने को कहा: अपना कर्तव्य पहचानो, परिणाम से आसक्ति छोड़ो और मन को स्थिर करो। दुविधा में पहले शांत हो, फिर छोटा सही कदम चलो।' },
+  { k: ['ध्यान', 'meditation', 'योग', 'yoga', 'मन', 'शांति', 'peace', 'एकाग्र'], src: 'पतंजलि योगसूत्र 1.2',
+    a: 'योगसूत्र कहता है: योगश्चित्तवृत्तिनिरोधः, यानी मन की चंचल वृत्तियों का शांत होना ही योग है। रोज़ थोड़ा समय साँस पर ध्यान लगाइए। मन जितना शांत होगा, निर्णय उतने साफ़ होंगे। सिमुलेशन में ध्यान से ऊर्जा लौटती है, और असल जीवन में भी ऐसा ही होता है।' },
+  { k: ['मृत्यु', 'death', 'आत्मा', 'soul', 'मरना'], src: 'भगवद्गीता 2.20',
+    a: 'गीता के अनुसार आत्मा न कभी जन्म लेती है, न मरती है। शरीर वस्त्र की तरह बदलता है। इस दृष्टि से मृत्यु का भय कम होता है और जीवन को पूरे मन से जीने की प्रेरणा मिलती है। अगर यह प्रश्न किसी निजी दुख से जुड़ा है, तो किसी अपने से बात ज़रूर कीजिए।' },
+  { k: ['पुनर्जन्म', 'rebirth', 'reincarnation', 'अगला जन्म', 'पिछला जन्म'], src: 'गीता, उपनिषद',
+    a: 'भारतीय दर्शन में जीवन को चक्र माना गया है: कर्म संस्कार बनाते हैं और संस्कार अगले अनुभव की दिशा तय करते हैं। मोक्ष इस चक्र से मुक्ति है। यह मान्यता परंपराओं में अलग-अलग रूप से समझाई गई है, इसलिए इसे अपने अनुभव और विवेक से परखिए।' },
+  { k: ['ज्ञान', 'knowledge', 'विद्या', 'सीखना', 'पढ़ाई', 'सत्य', 'ब्रह्म', 'उपनिषद', 'upanishad'], src: 'उपनिषद',
+    a: 'उपनिषदों की प्रार्थना है: असतो मा सद्गमय, तमसो मा ज्योतिर्गमय, यानी असत्य से सत्य की ओर और अंधकार से प्रकाश की ओर ले चलो। तत्त्वमसि और अहं ब्रह्मास्मि का भाव है कि खोजने वाला और जो खोजा जा रहा है, भीतर से जुड़े हैं। ज्ञान का फल विनम्रता है।' },
+  { k: ['क्रोध', 'gussa', 'anger', 'लोभ', 'लालच', 'greed', 'काम', 'वासना', 'इच्छा'], src: 'भगवद्गीता 2.62-63, 16.21',
+    a: 'गीता क्रम बताती है: विषयों का चिंतन आसक्ति लाता है, आसक्ति से कामना, कामना से क्रोध, क्रोध से भ्रम और भ्रम से बुद्धि का नाश। काम, क्रोध और लोभ को आत्म-विनाश के तीन द्वार कहा गया है। क्रोध आए तो प्रतिक्रिया से पहले कुछ साँसों का अंतर रखिए।' },
+  { k: ['धन', 'पैसा', 'money', 'अर्थ', 'लक्ष्मी', 'सफलता', 'success', 'कमाई', 'पुरुषार्थ'], src: 'पुरुषार्थ चतुष्टय',
+    a: 'भारतीय परंपरा में चार पुरुषार्थ हैं: धर्म, अर्थ, काम और मोक्ष। अर्थ यानी धन-संपदा का स्थान है, पर धर्म की मर्यादा में। धन साधन है, साध्य नहीं। यही कारण है कि सिमुलेशन में तेज़ धन बिना कर्म के टिकता नहीं।' },
+  { k: ['सृष्टि', 'ब्रह्मांड', 'universe', 'creation', 'युग', 'yug', 'समय', 'time', 'नासदीय'], src: 'ऋग्वेद नासदीय सूक्त, पुराण',
+    a: 'ऋग्वेद का नासदीय सूक्त सृष्टि के आरंभ पर विनम्र प्रश्न उठाता है: शायद कोई जानता है, या शायद वह भी नहीं जानता। पुराणों में समय चक्रीय है: सत्य, त्रेता, द्वापर और कलियुग, फिर पुनः आरंभ। यह परंपरा सिखाती है कि हर अंत एक नई शुरुआत भी है।' },
+  { k: ['शिव', 'shiv', 'vishnu', 'विष्णु', 'ब्रह्मा', 'brahma', 'त्रिमूर्ति', 'देवी', 'durga', 'दुर्गा', 'शक्ति'], src: 'पुराण',
+    a: 'पुराणों में ब्रह्मा सृजन, विष्णु पालन और शिव संहार या रूपांतरण के प्रतीक हैं। शक्ति वह ऊर्जा है जिससे सब कुछ गतिमान है। इन्हें जीवन के तीन चरणों के रूप में भी समझा जा सकता है: बनाना, सँभालना और पुराना छोड़कर आगे बढ़ना।' },
+  { k: ['हनुमान', 'hanuman', 'भक्ति', 'bhakti', 'सेवा', 'seva', 'दान', 'daan'], src: 'रामायण, गीता अध्याय 3, 12',
+    a: 'हनुमान जी बल, बुद्धि और विनम्र सेवा का संगम हैं। वे अपनी शक्ति का श्रेय राम को देते हैं। गीता भी निष्काम सेवा और भक्ति को श्रेष्ठ मानती है। सच्ची सेवा वह है जिसमें बदले की अपेक्षा न हो।' },
+  { k: ['कृष्ण', 'krishna', 'गीता', 'gita', 'जीवन', 'life', 'उद्देश्य', 'purpose'], src: 'भगवद्गीता',
+    a: 'गीता का केंद्र है: अपना स्वधर्म पहचानो, कर्म करो, फल से आसक्ति छोड़ो और समभाव रखो। जीवन का उद्देश्य बाहर की जीत से ज़्यादा भीतर की स्थिरता है। पहले अपना कर्तव्य, फिर बाकी सब।' }
+];
+
+const Baba = {
+  ask(q) {
+    const t = q.toLowerCase();
+    let best = null, score = 0;
+    for (const e of BabaKnowledge) {
+      const s = e.k.reduce((n, w) => n + (t.includes(w.toLowerCase()) ? 1 : 0), 0);
+      if (s > score) { score = s; best = e; }
+    }
+    const p = Engine.player;
+    const state = p.karma <= -15 ? 'तुम्हारा कर्म-स्कोर नीचे है। अब सेवा, शोध और ध्यान से दिशा बदलो।'
+      : p.energy <= 20 ? 'तुम्हारी ऊर्जा कम है। पहले विश्राम और ध्यान करो।'
+      : p.karma >= 25 ? 'तुम्हारा कर्म-पथ अच्छा है। इसे विनम्रता से जारी रखो।'
+      : 'तुम्हारा पथ अभी खुला है। अगला निर्णय सोच-समझकर लो।';
+    if (!best) return { text: 'पुत्र, इस प्रश्न का सीधा उत्तर मेरे पास नहीं है। कर्म, धर्म, ध्यान, क्रोध, धन, मृत्यु, राम, कृष्ण या सृष्टि जैसे विषय पर पूछो, तो मैं शास्त्रों का सार बता सकता हूँ। 🙏', src: '' };
+    return { text: best.a + '\n\n🔮 ' + state, src: best.src };
+  }
+};
+
+(() => {
+  const sec = document.createElement('section');
+  sec.className = 'w-full max-w-lg bg-slate-900/90 border border-amber-900/60 p-3 rounded-xl mt-3 mb-6';
+  sec.innerHTML = `
+    <h2 class="text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">🕉️ बाबा जी से पूछिए (शास्त्रों का सार)</h2>
+    <div id="baba-chat" class="space-y-2 max-h-72 overflow-y-auto mb-2 pr-1"></div>
+    <div id="baba-chips" class="flex flex-wrap gap-1.5 mb-2"></div>
+    <div class="flex gap-2">
+      <input id="baba-input" type="text" placeholder="अपना प्रश्न लिखिए..." class="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none focus:border-amber-500 select-text">
+      <button id="baba-send" class="px-3 py-2 text-xs font-bold rounded-lg bg-amber-500 text-slate-950">पूछें</button>
+    </div>
+    <p class="text-[10px] text-slate-500 mt-2">यह सरल सार है। परंपराओं में व्याख्याएँ अलग-अलग मिलती हैं, इसलिए मूल ग्रंथ और विद्वानों से भी पढ़िए।</p>`;
+  document.getElementById('akashic-log').closest('section').after(sec);
+
+  const chat = sec.querySelector('#baba-chat'), input = sec.querySelector('#baba-input');
+  function bubble(text, who, src) {
+    const d = document.createElement('div');
+    d.className = who === 'me' ? 'text-xs bg-slate-800 text-slate-200 rounded-lg px-3 py-2 ml-8'
+                               : 'text-xs bg-amber-950/60 border border-amber-900/60 text-amber-100 rounded-lg px-3 py-2 mr-8 whitespace-pre-line leading-relaxed';
+    d.textContent = text;
+    if (src) { const s = document.createElement('div'); s.className = 'text-[10px] text-amber-400/70 mt-1'; s.textContent = '📖 ' + src; d.appendChild(s); }
+    chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+  }
+  function send(q) {
+    q = (q || '').trim(); if (!q) return;
+    bubble(q, 'me'); input.value = '';
+    const wait = document.createElement('div');
+    wait.className = 'text-[11px] text-amber-400/70'; wait.textContent = '🧘 बाबा जी विचार कर रहे हैं...';
+    chat.appendChild(wait);
+    setTimeout(() => { wait.remove(); const r = Baba.ask(q); bubble(r.text, 'baba', r.src); }, 600);
+  }
+  sec.querySelector('#baba-send').onclick = () => send(input.value);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') send(input.value); });
+  ['कर्म क्या है?', 'क्रोध कैसे रोकूँ?', 'जीवन का उद्देश्य क्या है?', 'ध्यान क्यों ज़रूरी है?'].forEach(q => {
+    const b = document.createElement('button');
+    b.className = 'text-[10px] px-2 py-1 rounded-full border border-amber-800 text-amber-300';
+    b.textContent = q; b.onclick = () => send(q);
+    sec.querySelector('#baba-chips').appendChild(b);
+  });
+  bubble('नमस्ते पुत्र 🙏 कर्म, धर्म, ध्यान, मृत्यु, राम, कृष्ण या सृष्टि पर जो पूछना हो, पूछो।', 'baba');
+})();
+
+    </script>
+
+    <!-- ===== ADD-ON 3: PWA इंस्टॉल + ऑफ़लाइन ===== -->
+    <script>
+// PWA: service worker + "Install app" button
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+(() => {
+  let deferred = null;
+  const btn = document.createElement('button');
+  btn.textContent = '📲 ऐप इंस्टॉल करें';
+  btn.className = 'hidden fixed bottom-3 right-3 z-50 px-3 py-2 text-xs font-bold rounded-full bg-cyan-500 text-slate-950 shadow-lg';
+  document.body.appendChild(btn);
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; btn.classList.remove('hidden'); });
+  btn.onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; btn.classList.add('hidden'); };
+  window.addEventListener('appinstalled', () => btn.classList.add('hidden'));
+  // iPhone/Safari has no install prompt: show a hint
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (ios && !standalone) {
+    btn.textContent = '📲 Share → Add to Home Screen';
+    btn.classList.remove('hidden');
+    btn.onclick = () => btn.classList.add('hidden');
+  }
+})();
+
+    </script>
+
+
+</body>
+</html>
